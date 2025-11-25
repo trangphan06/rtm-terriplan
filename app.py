@@ -462,7 +462,7 @@ with st.sidebar:
                     st.rerun()
 
 # ==========================================
-# 5. KHU VỰC HIỂN THỊ KẾT QUẢ (FINAL OPTIMIZED)
+# 5. KHU VỰC HIỂN THỊ KẾT QUẢ (FINAL ADJUSTED FOR MODE 2)
 # ==========================================
 
 if current_df_edited is None:
@@ -573,7 +573,6 @@ else:
                 if st.session_state.editor_filter_key != found_code:
                     st.session_state.editor_filter_mode = 'single'
                     st.session_state.editor_filter_key = found_code
-                    # st.toast(f"Đã chọn: {found_code}", icon="🎯") 
 
         # Legend
         colors = ["#FF0000", "#0000FF", "#00FF00", "#FFFF00", "#FF00FF", "#00FFFF", "#800000", "#008000", "#000080", "#FFA500"]
@@ -609,13 +608,20 @@ else:
             else:
                 df_display = df_display_source
 
-            # Config Cột & Autosize (Cache)
+            # --- [UPDATED] Config Cột (Mode 2: Thêm Freq & Segment) ---
             cols_cfg = {}
             show_cols = ['Trạng thái', mapping['customer_code'], 'territory_id']
             if mapping.get('customer_name'): show_cols.append(mapping['customer_name'])
+            
+            # Chỉ thêm Tần suất & Phân loại nếu ở Mode 2
+            if mode_key == "Chế độ 2":
+                if mapping.get('freq'): show_cols.append(mapping['freq'])
+                if mapping.get('type'): show_cols.append(mapping['type'])
+
             if mapping.get('address'): show_cols.append(mapping['address'])
             if mapping.get('vol_ec'): show_cols.append(mapping['vol_ec'])
-
+            
+            # Tính width nếu chưa có
             if not st.session_state.col_widths:
                 for c in show_cols:
                     if c == 'territory_id': st.session_state.col_widths[c] = "small"
@@ -661,14 +667,13 @@ else:
 
             if has_unsaved_changes:
                 st.warning("Có thay đổi chưa lưu. Nếu Lọc bây giờ, các sửa đổi này sẽ mất.", icon="⚠️")
-
-            # Buttons
+            # Buttons (Hiển thị ở cả 2 chế độ)
             c_update, c_filter_change, c_clear = st.columns([1.2, 1, 0.8])
             
             with c_update:
                 btn_update = st.button("💾 Cập nhật", use_container_width=True, type="primary")
             with c_filter_change:
-                btn_show_changed = st.button("✏️ Tuyến đã đổi", use_container_width=True, disabled=(filter_mode == 'changed'))
+                btn_show_changed = st.button("⚠️ Tuyến đã đổi", use_container_width=True, disabled=(filter_mode == 'changed'))
             with c_clear:
                 btn_clear = st.button("🔄 Bỏ lọc", use_container_width=True, disabled=(filter_mode == 'all'))
 
@@ -679,7 +684,7 @@ else:
                     st.session_state.confirm_reset = True
                     st.rerun()
             else:
-                st.error("Quay về phiên bản trước khi chỉnh sửa thủ công?")
+                st.error("Quay về gốc? Mất dữ liệu đã sửa.")
                 c_yes, c_no = st.columns(2)
                 if c_yes.button("✅ Đồng ý", use_container_width=True, type="primary"):
                     # [OPTIMIZE]: RESET SIÊU TỐC
@@ -688,7 +693,7 @@ else:
                     st.session_state.editor_filter_key = None
                     st.session_state.confirm_reset = False
                     
-                    st.session_state.just_reset = True # Cờ báo hiệu cho phần Map biết là vừa Reset
+                    st.session_state.just_reset = True 
                     st.session_state.map_needs_refresh = True
                     st.session_state.map_version += 1
                     
